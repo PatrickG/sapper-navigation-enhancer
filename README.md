@@ -1,8 +1,8 @@
 # **SNE** **S**apper**N**avigation**E**nhancer
 
 ## Important
-* You need to use the `goto` function exported by **S**apper**N**avigation**E**nhancer instead of the `goto` function exported by Sapper.
-* You need to use either the `redirect` or `enhancePreloadContext` function instead of Sappers `this.redirect` in your `preload` functions.
+* You need to use the [`goto`](#goto) function exported by **S**apper**N**avigation**E**nhancer instead of the `goto` function exported by Sapper.
+* You need to use either the [`redirect`](#redirect) or [`enhancePreloadContext`](#enhancepreloadcontext) function instead of Sappers `this.redirect` in your `preload` functions.
 
 
 ## Initialization
@@ -38,8 +38,8 @@ afterStart();
 function back(fallback: string | () => string): void;
 ```
 
-If `canGoBack()` returns `true`, navigates to the previous history entry (like `history.back()`).\
-If `canGoBack()` returns `false`, navigates to the `fallback` url. It will do so by prepending a history entry with the fallback url before the current history entry and then navigates back.
+If [`canGoBack()`](#cangoback) returns `true`, navigates to the previous history entry (like `history.back()`).\
+If [`canGoBack()`](#cangoback) returns `false`, navigates to the `fallback` url. It will do so by prepending a history entry with the fallback url before the current history entry and then navigates back.
 
 
 ### beforeNavigate
@@ -74,7 +74,7 @@ You need to call this function before you call Sappers `start` function and you 
 
 If you provide the `startPaths` parameter and the current `location.pathname` does not match any of them, it will prepend a history entry - with the first item of `startPaths` array as the url - before the current history entry.
 
-This is the default exported function also, see Initialization.
+This is the default exported function also, see [Initialization](#initialization).
 
 
 ### canGoBack
@@ -94,6 +94,8 @@ function enhancePreloadContext(preloadContext: PreloadContext): void;
 ```
 
 Enhance sappers preload context with **S**apper**N**avigation**E**nhancers redirect function.
+
+You need to use this function (or [`redirect`](#redirect)) instead of Sappers `this.redirect()` function in your `preload` functions.
 
 ```html
 <!-- src/routes/_layout.svelte -->
@@ -144,7 +146,7 @@ type Goto = typeof import('@sapper/app').goto;
 function init(page: Readable<PageContext>, goto: Goto): void;
 ```
 
-You need to call this in your root layout component, see Initialization.
+You need to call this in your root layout component, see [Initialization](#initialization).
 
 
 ### preventNavigation
@@ -183,7 +185,7 @@ import type { PreloadContext } from '@sapper/common';
 function redirect(preloadContext: PreloadContext, statusCode: number, location: string): void;
 ```
 
-You need to use this function (or `enhancePreloadContext`) instead of Sappers `this.redirect()` inside your `preload` functions.
+You need to use this function (or [`enhancePreloadContext`](#enhancepreloadcontext)) instead of Sappers `this.redirect()` inside your `preload` functions.
 
 ```diff
 <!-- some-route-or-layout.svelte -->
