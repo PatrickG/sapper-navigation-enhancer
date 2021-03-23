@@ -7,6 +7,13 @@
     "dist",
     "src"
   ],
+  "keywords": [
+    "svelte",
+    "sapper",
+    "navigation",
+    "enhancer",
+    "prevent navigation"
+  ],
   "engines": {
     "node": ">=10"
   },
