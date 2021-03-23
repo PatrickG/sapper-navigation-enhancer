@@ -139,14 +139,15 @@ export const beforeStart = (_startPaths?: string[]) => {
 export default beforeStart;
 
 export const init = (page: Readable<PageContext>, goto: Goto) => {
-  if (initialized) {
-    throw new Error('Already initialized');
-  }
-
-  initialized = true;
   sapperGoto = goto;
 
   if (browser) {
+    if (initialized) {
+      throw new Error('Already initialized');
+    }
+
+    initialized = true;
+
     page.subscribe(() => {
       const { state } = history;
       if (state?.i || state?.i === 0) {
