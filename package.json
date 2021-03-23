@@ -38,6 +38,8 @@
     "trailingComma": "es5"
   },
   "name": "sapper-navigation-enhancer",
+  "description": "Sapper navigation enhancer",
+  "repository": "https://github.com/PatrickG/sapper-navigation-enhancer",
   "author": "Patrick Günther",
   "module": "dist/sapper-navigation-enhancer.esm.js",
   "size-limit": [
