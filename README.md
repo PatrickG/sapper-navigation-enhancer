@@ -1,7 +1,7 @@
-# **SNE** **S**apper**N**avigation**E**nhancer
+# sapper-navigation-enhancer
 
 ## Important
-* You need to use the [`goto`](#goto) function exported by **S**apper**N**avigation**E**nhancer instead of the `goto` function exported by Sapper.
+* You need to use the [`goto`](#goto) function exported by sapper-navigation-enhancer instead of the `goto` function exported by Sapper.
 * You need to use either the [`redirect`](#redirect) or [`enhancePreloadContext`](#enhancepreloadcontext) function instead of Sappers `this.redirect` in your `preload` functions.
 
 
@@ -10,7 +10,7 @@
 `src/client.js`
 ```js
 import { start } from '@sapper/app';
-import beforeStart from 'sne';
+import beforeStart from 'sapper-navigation-enhancer';
 
 const afterStart = beforeStart(['/']);
 start({ target: document.querySelector('#app') });
@@ -21,7 +21,7 @@ afterStart();
 ```html
 <script>
   import { goto, stores } from '@sapper/app';
-  import { init } from 'sne';
+  import { init } from 'sapper-navigation-enhancer';
 
   const { page } = stores();
 
@@ -55,7 +55,7 @@ Subscribe to navigation attempts. Navigation will be prevented, when you return 
 ```html
 <!-- some-route-or-component.svelte -->
 <script>
-  import { beforeNavigate } from 'sne';
+  import { beforeNavigate } from 'sapper-navigation-enhancer';
   import { onMount } from 'svelte';
 
   onMount(() => beforeNavigate(href => confirm(`Do you want to navigate to ${href}?`)));
@@ -93,14 +93,14 @@ import type { PreloadContext } from '@sapper/app';
 function enhancePreloadContext(preloadContext: PreloadContext): void;
 ```
 
-Enhance sappers preload context with **S**apper**N**avigation**E**nhancers redirect function.
+Enhance sappers preload context with sapper-navigation-enhancers redirect function.
 
 You need to use this function (or [`redirect`](#redirect)) instead of Sappers `this.redirect()` function in your `preload` functions.
 
 ```html
 <!-- src/routes/_layout.svelte -->
 <script context="module">
-  import { enhancePreloadContext } from 'sne';
+  import { enhancePreloadContext } from 'sapper-navigation-enhancer';
 
   export function preload() {
     enhancePreloadContext(this);
@@ -130,7 +130,7 @@ You need to use this function instead of Sappers `goto` function.
 <!-- some-component.svelte -->
 <script>
 -  import { goto } from '@sapper/app';
-+  import { goto } from 'sne';
++  import { goto } from 'sapper-navigation-enhancer';
 </script>
 
 <button on:click={() => goto('/')}>Home</button>
@@ -161,7 +161,7 @@ Prevents navigation. Returns a function that stops the prevention when called.
 ```html
 <!-- some-component.svelte -->
 <script>
-  import { preventNavigation } from 'sne';
+  import { preventNavigation } from 'sapper-navigation-enhancer';
 
   let preventing;
   function togglePrevention() {
@@ -190,7 +190,7 @@ You need to use this function (or [`enhancePreloadContext`](#enhancepreloadconte
 ```diff
 <!-- some-route-or-layout.svelte -->
 <script context="module">
-+  import { redirect } from 'sne';
++  import { redirect } from 'sapper-navigation-enhancer';
 
   export function preload() {
 -    this.redirect(302, '/');

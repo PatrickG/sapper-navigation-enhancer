@@ -37,7 +37,7 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "sne",
+  "name": "sapper-navigation-enhancer",
   "author": "Patrick Günther",
   "module": "dist/sne.esm.js",
   "size-limit": [
