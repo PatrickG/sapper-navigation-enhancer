@@ -39,14 +39,14 @@
   },
   "name": "sapper-navigation-enhancer",
   "author": "Patrick Günther",
-  "module": "dist/sne.esm.js",
+  "module": "dist/sapper-navigation-enhancer.esm.js",
   "size-limit": [
     {
-      "path": "dist/sne.cjs.production.min.js",
+      "path": "dist/sapper-navigation-enhancer.cjs.production.min.js",
       "limit": "10 KB"
     },
     {
-      "path": "dist/sne.esm.js",
+      "path": "dist/sapper-navigation-enhancer.esm.js",
       "limit": "10 KB"
     }
   ],
