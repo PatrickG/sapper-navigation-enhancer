@@ -2,7 +2,7 @@
 
 ## Important
 * You need to use the [`goto`](#goto) function exported by sapper-navigation-enhancer instead of the `goto` function exported by Sapper.
-* You need to use either the [`redirect`](#redirect) or [`enhancePreloadContext`](#enhancepreloadcontext) function instead of Sappers `this.redirect` in your `preload` functions.
+* You need to use the [`redirect`](#redirect) function exported by sapper-navigation-enhancer instead of Sappers `this.redirect` in your `preload` functions.
 
 
 ## Initialization
@@ -86,38 +86,6 @@ function canGoack(): boolean;
 Returns true if the previous history entry is from your app.
 
 
-### enhancePreloadContext
-
-```ts
-import type { PreloadContext } from '@sapper/app';
-function enhancePreloadContext(preloadContext: PreloadContext): void;
-```
-
-Enhance sappers preload context with sapper-navigation-enhancers redirect function.
-
-You need to use this function (or [`redirect`](#redirect)) instead of Sappers `this.redirect()` function in your `preload` functions.
-
-```html
-<!-- src/routes/_layout.svelte -->
-<script context="module">
-  import { enhancePreloadContext } from 'sapper-navigation-enhancer';
-
-  export function preload() {
-    enhancePreloadContext(this);
-  };
-</script>
-```
-
-```html
-<!-- some-layout-or-route.svelte -->
-<script context="module">
-  export function preload() {
-    this.redirect(302, '/');
-  }
-</script>
-```
-
-
 ### goto
 
 ```ts
@@ -185,7 +153,7 @@ import type { PreloadContext } from '@sapper/common';
 function redirect(preloadContext: PreloadContext, statusCode: number, location: string): void;
 ```
 
-You need to use this function (or [`enhancePreloadContext`](#enhancepreloadcontext)) instead of Sappers `this.redirect()` inside your `preload` functions.
+You need to use this function instead of Sappers `this.redirect()` inside your `preload` functions.
 
 ```diff
 <!-- some-route-or-layout.svelte -->

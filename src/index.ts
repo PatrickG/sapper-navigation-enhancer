@@ -240,27 +240,6 @@ export const redirect = (
   }
 };
 
-export const enhancePreloadContext = (preloadContext: PreloadContext) => {
-  if (!browser) {
-    return;
-  }
-
-  const { redirect } = preloadContext;
-  preloadContext.redirect = (statusCode: number, path: string) => {
-    const { state } = history;
-    redirect.call(preloadContext, statusCode, path);
-    if (state?.i || state?.i === 0) {
-      setTimeout(() => {
-        history.replaceState(
-          { ...history.state, i: state.i },
-          document.title,
-          location.href
-        );
-      }, 0);
-    }
-  };
-};
-
 export const goto: Goto = async (href, opts) => {
   if (!forceGoto && (prevent || beforeNavigateCallbacks.length)) {
     notifyBeforeNavigate(href, opts);
