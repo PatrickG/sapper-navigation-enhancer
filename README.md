@@ -80,7 +80,7 @@ This is the default exported function also, see [Initialization](#initialization
 ### canGoBack
 
 ```ts
-function canGoack(): boolean;
+function canGoBack(): boolean;
 ```
 
 Returns true if the previous history entry is from your app.
