@@ -176,10 +176,8 @@ export const preventNavigation = () => {
 };
 
 export const beforeNavigate = (callback: beforeNavigateCallback) => {
-  if (
-    !beforeNavigateCallbacks.includes(callback) &&
-    beforeNavigateCallbacks.push(callback) === 1
-  ) {
+  if (!beforeNavigateCallbacks.includes(callback)) {
+    beforeNavigateCallbacks.push(callback);
     addClickListener();
   }
 
@@ -187,9 +185,7 @@ export const beforeNavigate = (callback: beforeNavigateCallback) => {
     const index = beforeNavigateCallbacks.indexOf(callback);
     if (index !== -1) {
       beforeNavigateCallbacks.splice(index, 1);
-      if (!beforeNavigateCallbacks.length) {
-        removeClickListener();
-      }
+      removeClickListener();
     }
   };
 };
