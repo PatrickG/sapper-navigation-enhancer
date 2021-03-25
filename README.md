@@ -5,6 +5,13 @@
 * You need to use the [`redirect`](#redirect) function exported by sapper-navigation-enhancer instead of Sappers `this.redirect` in your `preload` functions.
 
 
+## Install
+
+```sh
+npm install sapper-navigation-enhancer
+```
+
+
 ## Initialization
 
 `src/client.js`
