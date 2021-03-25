@@ -313,7 +313,7 @@ export const redirect = (
   path: string
 ) => {
   if (browser) {
-    next = history.state?.i;
+    next = next || next === 0 ? next : history.state?.i;
   }
 
   return preloadContext.redirect(statusCode, path);
