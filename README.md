@@ -19,7 +19,7 @@ npm install sapper-navigation-enhancer
 import { start } from '@sapper/app';
 import beforeStart from 'sapper-navigation-enhancer';
 
-const afterStart = beforeStart(['/']);
+const afterStart = beforeStart(['/'], true);
 start({ target: document.querySelector('#app') });
 afterStart();
 ```
@@ -52,12 +52,15 @@ If [`canGoBack()`](#cangoback) returns `false`, navigates to the `fallback` url.
 ### beforeNavigate
 
 ```ts
-type Callback = (href: string) => boolean | undefined | void | Promise<boolean | undefined | void>;
+type Callback = (href: string) => false | Promise<false | any> | any;
 type Unsubscribe = () => void;
-function beforeNavigate(Callback): Unsubscribe;
+function beforeNavigate(callback: Callback, useBeforeUnload: boolean = false): Unsubscribe;
 ```
 
 Subscribe to navigation attempts. Navigation will be prevented, when you return `false` or `Promise<false>`.
+
+If `useBeforeUnload` (or `alwaysUseBeforeUnload` in [`beforeStart`](#beforestart)) is `true`, a `onbeforeunload` listener will be created.\
+Returns an `Unsubscribe` function, which must be called when the component is destroyed.
 
 ```html
 <!-- some-route-or-component.svelte -->
@@ -74,12 +77,13 @@ Subscribe to navigation attempts. Navigation will be prevented, when you return 
 
 ```ts
 type AfterStart = () => void;
-function beforeStart(startPaths?: string[]): AfterStart;
+function beforeStart(startPaths?: string[], alwaysUseBeforeUnload: boolean = false): AfterStart;
 ```
 
 You need to call this function before you call Sappers `start` function and you need to call the returned `AfterStart` function after you call Sappers `start` function. Typically in the `client.js`.
 
-If you provide the `startPaths` parameter and the current `location.pathname` does not match any of them, it will prepend a history entry - with the first item of `startPaths` array as the url - before the current history entry.
+If you provide the `startPaths` parameter and the current `location.pathname` does not match any of them, it will prepend a history entry - with the first item of `startPaths` array as the url - before the current history entry.\
+If `alwaysUseBeforeUnload` is `true`, a `onbeforeunload` listener will be created when calling [`beforeNavigate`](#beforenavigate) or [`preventNavigation`](#preventnavigation).
 
 This is the default exported function also, see [Initialization](#initialization).
 
@@ -96,10 +100,13 @@ Returns true if the previous history entry is from your app.
 ### goto
 
 ```ts
-function goto(href: string, opts?: { noscroll?: boolean; replaceStart?: boolean; }): Promise<void>;
+function goto(href: string, opts?: { force?: boolean; noscroll?: boolean; replaceStart?: boolean; }): Promise<void>;
 ```
 
 You need to use this function instead of Sappers `goto` function.
+
+If `opts.force` is `true`, no [`beforeNavigate`](#beforenavigate) callback will be called.\
+If you called [`preventNavigation`](#preventnavigation), `opts.force` has no effect.
 
 ```diff
 <!-- some-component.svelte -->
@@ -128,10 +135,12 @@ You need to call this in your root layout component, see [Initialization](#initi
 
 ```ts
 type RemovePrevention = () => void;
-function preventNavigation(): RemovePrevention;
+function preventNavigation(useBeforeUnload: boolean = false): RemovePrevention;
 ```
 
 Prevents navigation. Returns a function that stops the prevention when called.
+
+If `useBeforeUnload` (or `alwaysUseBeforeUnload` in [`beforeStart`](#beforestart)) is `true`, a `onbeforeunload` listener will be created.
 
 ```html
 <!-- some-component.svelte -->

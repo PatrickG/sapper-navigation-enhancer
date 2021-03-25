@@ -16,15 +16,18 @@ const browser =
 let started = false;
 let initialized = false;
 
-let popI: number | undefined;
 let current = 0;
-let prevent = false;
-let clickListener = false;
-let forceGoto = false;
-let beforeNavigateCallbacks: beforeNavigateCallback[] = [];
+let next: number | undefined;
+let chillOnPop = false;
 
-let startPaths: string[] | undefined;
+let clickListener = false;
+let beforeUnloadListener = false;
+let preventions: boolean[][] = [];
+let beforeNavigateCallbacks: [beforeNavigateCallback, boolean][] = [];
+
 let sapperGoto: Goto;
+let startPaths: string[] | undefined;
+let alwaysUseBeforeUnload = false;
 
 const prepend = (path: string, state?: any) => {
   const { href } = location;
@@ -34,11 +37,14 @@ const prepend = (path: string, state?: any) => {
 };
 
 const clickHandler = (event: MouseEvent) => {
-  if ((event.which === null ? event.button : event.which) !== 1) {
-    return;
-  }
-
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+  if (
+    event.button ||
+    event.which !== 1 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
     return;
   }
 
@@ -56,8 +62,8 @@ const clickHandler = (event: MouseEvent) => {
       : (anchor.href as string);
 
   event.preventDefault();
-  if (!prevent && href !== location.href) {
-    notifyBeforeNavigate(href);
+  if (!preventions.length && href !== location.href) {
+    notifyBeforeNavigate({ href });
   }
 };
 
@@ -69,49 +75,108 @@ const addClickListener = () => {
 };
 
 const removeClickListener = () => {
-  if (clickListener && !prevent && !beforeNavigateCallbacks.length) {
+  if (clickListener && !preventions.length && !beforeNavigateCallbacks.length) {
     clickListener = false;
     window.removeEventListener('click', clickHandler, true);
   }
 };
 
-const notifyBeforeNavigate: Goto = async (href: string, opts) => {
-  if (
-    !(
-      await Promise.all(beforeNavigateCallbacks.map(callback => callback(href)))
-    ).some(result => result === false)
-  ) {
-    forceGoto = true;
-    goto(href, opts);
-    forceGoto = false;
+const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
+  event.preventDefault();
+  return (event.returnValue = 'Navigation prevented');
+};
+
+const addBeforeUnloadListener = () => {
+  if (!beforeUnloadListener) {
+    beforeUnloadListener = true;
+    window.addEventListener('beforeunload', beforeUnloadHandler, true);
   }
 };
 
-export const beforeStart = (_startPaths?: string[]) => {
+const removeBeforeUnloadListener = () => {
+  if (
+    beforeUnloadListener &&
+    !preventions.some(([beforeUnload]) => beforeUnload) &&
+    !beforeNavigateCallbacks.some(([_, beforeUnload]) => beforeUnload)
+  ) {
+    beforeUnloadListener = false;
+    window.removeEventListener('beforeunload', beforeUnloadHandler, true);
+  }
+};
+
+const waitUntilAtCurrent = () =>
+  new Promise(resolve => {
+    const done = () => {
+      cancelAnimationFrame(animationFrame);
+      clearTimeout(timeout);
+      (resolve as () => void)();
+    };
+
+    const check = () => {
+      animationFrame = requestAnimationFrame(check);
+      if (history.state?.i === current) {
+        done();
+      }
+    };
+
+    let animationFrame = requestAnimationFrame(check);
+    const timeout = setTimeout(done, 300);
+  });
+
+const notifyBeforeNavigate = async (
+  { href, delta }: { href: string; delta?: number },
+  opts?: { noscroll?: boolean; replaceState?: boolean }
+) => {
+  if (
+    !(
+      await Promise.all(
+        beforeNavigateCallbacks.map(([callback]) => callback(href))
+      )
+    ).some(result => result === false)
+  ) {
+    if (delta) {
+      chillOnPop = true;
+      history.go(-delta);
+    } else {
+      goto(href, { ...opts, force: true });
+    }
+  }
+};
+
+export const beforeStart = (
+  _startPaths?: string[],
+  _alwaysUseBeforeUnload: boolean = false
+) => {
   if (started) {
     throw new Error('Already started');
   }
 
   started = true;
   startPaths = _startPaths;
+  alwaysUseBeforeUnload = _alwaysUseBeforeUnload;
 
   window.addEventListener('popstate', event => {
     const { i } = event.state || {};
     if (i || i === 0) {
-      if (prevent || beforeNavigateCallbacks.length) {
+      const hasPreventions = preventions.length;
+      if (hasPreventions || (!chillOnPop && beforeNavigateCallbacks.length)) {
         event.stopImmediatePropagation();
         const delta = current - i;
         if (delta !== 0) {
           const { href } = location;
           history.go(delta);
-          if (!prevent) {
-            notifyBeforeNavigate(href);
+          if (!hasPreventions) {
+            waitUntilAtCurrent().then(() =>
+              notifyBeforeNavigate({ href, delta })
+            );
           }
         }
       } else {
-        popI = current = i;
+        current = next = i;
       }
     }
+
+    chillOnPop = false;
   });
 
   let { state } = history;
@@ -154,38 +219,64 @@ export const init = (page: Readable<PageContext>, goto: Goto) => {
         current = state.i;
       } else {
         history.replaceState(
-          { ...state, i: (current = popI || popI === 0 ? popI : current + 1) },
+          { ...state, i: (current = next || next === 0 ? next : current + 1) },
           document.title,
           location.href
         );
       }
 
-      popI = undefined;
+      next = undefined;
     });
   }
 };
 
-export const preventNavigation = () => {
-  prevent = true;
+export const preventNavigation = (useBeforeUnload: boolean = false) => {
+  const beforeUnload = alwaysUseBeforeUnload || useBeforeUnload;
+  const prevention = [beforeUnload];
+
+  preventions.push(prevention);
+
   addClickListener();
-
-  return () => {
-    prevent = false;
-    removeClickListener();
-  };
-};
-
-export const beforeNavigate = (callback: beforeNavigateCallback) => {
-  if (!beforeNavigateCallbacks.includes(callback)) {
-    beforeNavigateCallbacks.push(callback);
-    addClickListener();
+  if (beforeUnload) {
+    addBeforeUnloadListener();
   }
 
   return () => {
-    const index = beforeNavigateCallbacks.indexOf(callback);
+    const index = preventions.indexOf(prevention);
+    if (index !== 1) {
+      preventions.splice(index, 1);
+      removeClickListener();
+      removeBeforeUnloadListener();
+    }
+  };
+};
+
+export const beforeNavigate = (
+  callback: beforeNavigateCallback,
+  useBeforeUnload: boolean = false
+) => {
+  const beforeUnload = alwaysUseBeforeUnload || useBeforeUnload;
+  const beforeNavigateCallback = beforeNavigateCallbacks.find(
+    ([cb]) => cb === callback
+  );
+
+  if (!beforeNavigateCallback) {
+    beforeNavigateCallbacks.push([callback, beforeUnload]);
+  } else if (beforeNavigateCallback[1] !== beforeUnload) {
+    beforeNavigateCallback[1] = beforeUnload;
+  }
+
+  addClickListener();
+  if (beforeUnload) {
+    addBeforeUnloadListener();
+  }
+
+  return () => {
+    const index = beforeNavigateCallbacks.findIndex(([cb]) => cb === callback);
     if (index !== -1) {
       beforeNavigateCallbacks.splice(index, 1);
       removeClickListener();
+      removeBeforeUnloadListener();
     }
   };
 };
@@ -193,7 +284,7 @@ export const beforeNavigate = (callback: beforeNavigateCallback) => {
 export const canGoBack = () => current > 0;
 
 export const back = (fallback?: string | (() => string)) => {
-  if (prevent) {
+  if (preventions.length) {
     return;
   }
 
@@ -221,28 +312,23 @@ export const redirect = (
   statusCode: number,
   path: string
 ) => {
-  if (!browser) {
-    return preloadContext.redirect(statusCode, path);
+  if (browser) {
+    next = history.state?.i;
   }
 
-  const { state } = history;
-  preloadContext.redirect(statusCode, path);
-  if (state?.i || state?.i === 0) {
-    setTimeout(
-      () =>
-        history.replaceState(
-          { ...history.state, i: state.i },
-          document.title,
-          location.href
-        ),
-      0
-    );
-  }
+  return preloadContext.redirect(statusCode, path);
 };
 
-export const goto: Goto = async (href, opts) => {
-  if (!forceGoto && (prevent || beforeNavigateCallbacks.length)) {
-    notifyBeforeNavigate(href, opts);
+export const goto = async (
+  href: string,
+  opts?: { force?: boolean; noscroll?: boolean; replaceState?: boolean }
+) => {
+  if (preventions.length) {
+    return;
+  }
+
+  if (!opts?.force && beforeNavigateCallbacks.length) {
+    notifyBeforeNavigate({ href }, opts);
     return;
   }
 
@@ -250,20 +336,9 @@ export const goto: Goto = async (href, opts) => {
     throw new Error('Not initialized');
   }
 
-  if (!browser || !opts?.replaceState) {
-    return sapperGoto(href, opts);
+  if (opts?.replaceState) {
+    next = history.state?.i;
   }
 
-  const { state } = history;
-  const result = await sapperGoto(href, opts);
-  if (state?.i || state?.i === 0) {
-    current = state.i;
-    history.replaceState(
-      { ...history.state, i: current },
-      document.title,
-      location.href
-    );
-  }
-
-  return result;
+  return sapperGoto(href, opts);
 };
