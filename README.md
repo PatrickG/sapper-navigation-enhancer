@@ -113,13 +113,23 @@ At the same time, `canGoBack` is a readable store.
 ### goto
 
 ```ts
-function goto(href: string, opts?: { force?: boolean; noscroll?: boolean; replaceStart?: boolean; }): Promise<void>;
+function goto(
+  href: string,
+  opts: {
+    force?: boolean;
+    noscroll?: boolean;
+    replaceStart?: boolean;
+    state?: Record<string, any>;
+  } = {}
+): Promise<void>;
 ```
 
 You need to use this function instead of Sappers `goto` function.
 
 If `opts.force` is `true`, no [`beforeNavigate`](#beforenavigate) callback will be called.\
 If you called [`preventNavigation`](#preventnavigation), `opts.force` has no effect.
+
+With `opts.state` you can set `history.state` properties for the next history entry.
 
 ```diff
 <!-- some-component.svelte -->
@@ -195,3 +205,12 @@ You need to use this function instead of Sappers `this.redirect()` inside your `
   }
 </script>
 ```
+
+
+### state
+
+```ts
+function state(state: Record<string, any>): void;
+```
+
+Update the `history.state` of the current history entry.

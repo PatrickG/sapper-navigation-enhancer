@@ -6,7 +6,7 @@ type Goto = typeof import('@sapper/app').goto;
 
 type beforeNavigateCallback = (
   url: string
-) => boolean | undefined | void | Promise<boolean | undefined | void>;
+) => false | Promise<false | any> | any;
 
 const browser =
   typeof window !== 'undefined' &&
@@ -20,7 +20,7 @@ let started = false;
 let initialized = false;
 
 let current = 0;
-let next: number | undefined;
+let next: Record<string, any> | undefined;
 let chillOnPop = false;
 
 let clickListener = false;
@@ -175,7 +175,7 @@ export const beforeStart = (
           }
         }
       } else {
-        current = next = i;
+        next = { i: current = i };
         canGoBackStore.set(current > 0);
       }
     }
@@ -225,7 +225,11 @@ export const init = (page: Readable<PageContext>, goto: Goto) => {
         current = state.i;
       } else {
         history.replaceState(
-          { ...state, i: (current = next || next === 0 ? next : current + 1) },
+          {
+            ...state,
+            ...next,
+            i: current = next?.i || next?.i === 0 ? next.i : current + 1,
+          },
           document.title,
           location.href
         );
@@ -321,7 +325,7 @@ export const redirect = (
   path: string
 ) => {
   if (browser) {
-    next = next || next === 0 ? next : history.state?.i;
+    next = { ...next, i: next?.i || next?.i === 0 ? next.i : history.state?.i };
   }
 
   return preloadContext.redirect(statusCode, path);
@@ -329,7 +333,12 @@ export const redirect = (
 
 export const goto = async (
   href: string,
-  opts?: { force?: boolean; noscroll?: boolean; replaceState?: boolean }
+  opts: {
+    force?: boolean;
+    noscroll?: boolean;
+    replaceState?: boolean;
+    state?: Record<string, any>;
+  } = {}
 ) => {
   if (preventions.length) {
     return;
@@ -345,8 +354,17 @@ export const goto = async (
   }
 
   if (opts?.replaceState) {
-    next = history.state?.i;
+    next = { ...opts.state, i: history.state?.i };
+  } else if (opts.state) {
+    next = opts.state;
   }
 
   return sapperGoto(href, opts);
 };
+
+export const state = (state: Record<string, any>) =>
+  history.replaceState(
+    { ...history.state, ...state, i: current },
+    document.title,
+    location.href
+  );
