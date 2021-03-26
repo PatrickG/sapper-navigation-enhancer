@@ -96,6 +96,19 @@ function canGoBack(): boolean;
 
 Returns true if the previous history entry is from your app.
 
+At the same time, `canGoBack` is a readable store.
+
+```html
+<!-- some-component.svelte -->
+<script>
+  import { back, canGoBack } from 'sapper-navigation-enhancer';
+</script>
+
+{#if $canGoBack}
+  <button on:click={() => back('/')}>Go back</button>
+{/if}
+```
+
 
 ### goto
 

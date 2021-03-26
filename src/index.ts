@@ -1,5 +1,6 @@
 import type { PageContext, PreloadContext } from '@sapper/common';
 import type { Readable } from 'svelte/store';
+import { writable } from 'svelte/store';
 
 type Goto = typeof import('@sapper/app').goto;
 
@@ -12,6 +13,8 @@ const browser =
   typeof document !== 'undefined' &&
   typeof location !== 'undefined' &&
   typeof history !== 'undefined';
+
+const canGoBackStore = writable(false);
 
 let started = false;
 let initialized = false;
@@ -173,6 +176,7 @@ export const beforeStart = (
         }
       } else {
         current = next = i;
+        canGoBackStore.set(current > 0);
       }
     }
 
@@ -182,6 +186,7 @@ export const beforeStart = (
   let { state } = history;
   if (state?.i || state?.i === 0) {
     current = state.i;
+    canGoBackStore.set(current > 0);
   } else if (
     startPaths &&
     startPaths[0] &&
@@ -189,6 +194,7 @@ export const beforeStart = (
   ) {
     prepend(startPaths[0]);
     state = { ...state, i: ++current };
+    canGoBackStore.set(true);
   } else {
     state = { ...state, i: 0 };
   }
@@ -226,6 +232,7 @@ export const init = (page: Readable<PageContext>, goto: Goto) => {
       }
 
       next = undefined;
+      canGoBackStore.set(current > 0);
     });
   }
 };
@@ -282,6 +289,7 @@ export const beforeNavigate = (
 };
 
 export const canGoBack = () => current > 0;
+canGoBack.subscribe = canGoBackStore.subscribe;
 
 export const back = (fallback?: string | (() => string)) => {
   if (preventions.length) {
